@@ -10,8 +10,6 @@ import { auth } from '@/app/auth/firebase';
 import NotificationPopoverItem from './Notifications';
 
 const Navbar = () => {
-
-
     const [userLoggedin, setuserLoggedin] = useState(false);
 
     // const [userLastName, setUserLastName] = useState("");
@@ -19,44 +17,37 @@ const Navbar = () => {
     const currentPathName = usePathname();
 
     useEffect(() => {
-
-        const sessionEmail = localStorage.getItem("session_user")
-        console.log("sessionEmail got from the session" + sessionEmail);
+        const sessionEmail = localStorage.getItem('session_user');
+        console.log('sessionEmail got from the session' + sessionEmail);
 
         if (sessionEmail != null) {
             setuserLoggedin(true);
         }
-
     }, []);
-
 
     function setAuthSuccessURLHandler() {
         // alert("going to login page");
-        console.log("onclick");
+        console.log('onclick');
         console.log(currentPathName);
-        localStorage.setItem("authCallbackSuccessUrl", currentPathName);
+        localStorage.setItem('authCallbackSuccessUrl', currentPathName);
     }
 
     function firebaseLogoutHandler() {
+        localStorage.setItem('authCallbackSuccessUrl', currentPathName);
 
-        localStorage.setItem("authCallbackSuccessUrl", currentPathName);
+        localStorage.removeItem('session_user');
+        localStorage.removeItem('user_first_name');
+        localStorage.removeItem('user_last_name');
+        localStorage.removeItem('email_veirfy_status');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_token_login');
+        localStorage.removeItem('userId');
 
-        localStorage.removeItem("session_user");
-        localStorage.removeItem("user_first_name");
-        localStorage.removeItem("user_last_name");
-        localStorage.removeItem("email_veirfy_status");
-        localStorage.removeItem("auth_token");
-        localStorage.removeItem("auth_token_login");
-        localStorage.removeItem("userId");
-
-
-        const redirectURI = localStorage.getItem("authCallbackSuccessUrl");
+        const redirectURI = localStorage.getItem('authCallbackSuccessUrl');
 
         auth.signOut();
 
         window.location.href = redirectURI || '/';
-
-
     }
 
     return (
@@ -65,7 +56,7 @@ const Navbar = () => {
                 <nav className='flex items-center justify-between '>
                     <div className='flex-shrink-0'>
                         <Link href='/' title=''>
-                        <svg xmlns='http://www.w3.org/2000/svg' className='w-20 h-10' viewBox='0 0 200 103' fill='none'>
+                            <svg xmlns='http://www.w3.org/2000/svg' className='w-20 h-10' viewBox='0 0 200 103' fill='none'>
                                 <path
                                     d='M59.9463 101.857V81.7449H69.3148C70.8415 81.7449 72.1501 81.9788 73.2406 82.4468C74.3312 82.9147 75.1639 83.5896 75.7389 84.4715C76.3139 85.3354 76.6014 86.3882 76.6014 87.6301C76.6014 88.512 76.3337 89.3578 75.7984 90.1677C75.2631 90.9596 74.3807 91.6255 73.1514 92.1655V90.1137C74.3212 90.5277 75.2234 91.0226 75.8579 91.5985C76.4924 92.1745 76.9286 92.8044 77.1665 93.4883C77.4044 94.1542 77.5234 94.8561 77.5234 95.594C77.5234 97.5737 76.7997 99.1125 75.3523 100.21C73.9049 101.308 71.8924 101.857 69.3148 101.857H59.9463ZM64.5562 98.2126H69.8501C70.782 98.2126 71.5256 97.9697 72.0807 97.4837C72.6359 96.9978 72.9135 96.3679 72.9135 95.594C72.9135 94.8021 72.6359 94.1632 72.0807 93.6773C71.5256 93.1913 70.782 92.9484 69.8501 92.9484H64.5562V98.2126ZM64.5562 89.3039H69.642C70.3557 89.3039 70.9208 89.1239 71.3372 88.7639C71.7734 88.386 71.9915 87.891 71.9915 87.2791C71.9915 86.6672 71.7734 86.1813 71.3372 85.8213C70.9208 85.4434 70.3557 85.2544 69.642 85.2544H64.5562V89.3039Z'
                                     fill='black'
@@ -92,18 +83,18 @@ const Navbar = () => {
                     </div>
 
                     <div className='flex gap-3'>
-
                         {userLoggedin == false && (
-                            <div className="fle">
+                            <div className='fle'>
                                 <Link href='/auth/login'>
-                                    <Button onClick={setAuthSuccessURLHandler} variant='outline'>Login</Button>
+                                    <Button onClick={setAuthSuccessURLHandler} variant='outline'>
+                                        Login
+                                    </Button>
                                 </Link>
 
                                 <Link href='/auth/signup'>
                                     <Button className='ml-4 bg-black'>Sign Up</Button>
                                 </Link>
                             </div>
-
                         )}
                         {/* {userLoggedin == true && (
                             <div className="flex flex-col">
@@ -112,7 +103,7 @@ const Navbar = () => {
                             </div>
                         )} */}
 
-                        {userLoggedin == true && (<NotificationPopoverItem />)}
+                        <div className='z-50'>{userLoggedin == true && <NotificationPopoverItem />}</div>
 
                         {/* {userLoggedin == true && (
                             <img className=" border-spacing-0 shadow-md h-8 w-8 flex-none rounded-full bg-gray-50" src="/neutral_image_avatar.png" alt="" />
@@ -136,7 +127,6 @@ const Navbar = () => {
                                 <DropdownMenuSeparator />
 
                                 <DropdownMenuGroup>
-
                                     <DropdownMenuItem>
                                         <Link href='/' className='flex '>
                                             <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth='1.5' stroke='currentColor' className='w-4 h-4 mr-2'>
@@ -158,7 +148,6 @@ const Navbar = () => {
                                     )}
 
                                     {userLoggedin && (
-
                                         <DropdownMenuItem>
                                             <Link href='/trips' className='flex '>
                                                 <svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' strokeWidth='1.5' stroke='currentColor' className='w-4 h-4 mr-2'>
@@ -188,7 +177,6 @@ const Navbar = () => {
                                             Terms & conditions
                                         </Link>
                                     </DropdownMenuItem>
-
 
                                     <DropdownMenuItem>
                                         <Link href='/terms' className='flex '>

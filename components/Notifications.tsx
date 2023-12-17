@@ -1,76 +1,125 @@
-import { Fragment } from 'react'
-import { Popover, Transition } from '@headlessui/react'
-import { BellAlertIcon, ChevronDownIcon, PhoneIcon, PlayCircleIcon } from '@heroicons/react/20/solid'
-import {
-    ArrowPathIcon,
-    ChartPieIcon,
-    CursorArrowRaysIcon,
-    FingerPrintIcon,
-    SquaresPlusIcon,
-    BellIcon
-} from '@heroicons/react/24/outline'
-import { ShieldCloseIcon } from 'lucide-react'
-
-const Notifications = [
-    { name: 'BMW M2 2012', description: 'Your Trip has been approved by the host.', href: '/trips/{tripid}', icon: BellIcon },
-
-]
-const callsToAction = [
-    { name: 'See All Notifications', href: '/notifications/all' },
-    
-]
+import { BellIcon } from '@heroicons/react/24/outline';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useEffect, useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from './ui/button';
+import { updateUserNotifications } from '@/app/_actions/update_all_notifications';
+import { getAllNotifications } from '@/app/_actions/get_all_notifications';
 
 export default function NotificationPopoverItem() {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [notificationsData, setNotificationsData] = useState([]);
+    const [notReadMessages, setNotReadMessages] = useState([]);
+
+    useEffect(() => {
+        const getInitialNotifications = async () => {
+            await getNotifications();
+        };
+
+        getInitialNotifications();
+    }, []);
+
+    const getNotifications = async () => {
+        setLoading(true);
+        setError(null);
+
+        const user = localStorage.getItem('session_user');
+
+        if (user) {
+            const id = localStorage.getItem('userId');
+            const auth_token = localStorage.getItem('auth_token_login');
+            if (id && auth_token) {
+                try {
+                    const data = await getAllNotifications(id, auth_token);
+                    setNotificationsData(data);
+
+                    const unReadMessages = data.filter(item => item.viewed === false);
+                    setNotReadMessages(unReadMessages);
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    setError('An error occurred while fetching data.');
+                } finally {
+                    setLoading(false);
+                }
+            }
+        }
+    };
+
+    const markAsRead = async () => {
+        const unReadMessagesIds = String(notReadMessages.map(item => item.id).join(',')) || null;
+        setError(null);
+
+        const user = localStorage.getItem('session_user');
+
+        if (user && !unReadMessagesIds) {
+            const id = localStorage.getItem('userId');
+            const auth_token = localStorage.getItem('auth_token_login');
+            if (id && auth_token) {
+                try {
+                    const data = await updateUserNotifications(unReadMessagesIds, auth_token);
+                    getNotifications();
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    setError('An error occurred while fetching data.');
+                } finally {
+                    setLoading(false);
+                }
+            }
+        }
+    };
+
     return (
-        <Popover className="relative">
-            <Popover.Button className="inline-flex items-center gap-x-1 text-sm font-semibold leading-6 text-gray-900">
-                {/* <span>Notifications</span> */}
-                <div className="mt-1 flex h-11 w-11 flex-none items-center justify-center rounded-lg bg-gray-50 group-hover:bg-white">
-                    <BellIcon className="h-6 w-6 text-gray-600 group-hover:text-indigo-600" aria-hidden="true" />
-                </div>
-                <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
-            </Popover.Button>
-            <Transition
-                as={Fragment}
-                enter="transition ease-out duration-200"
-                enterFrom="opacity-0 translate-y-1"
-                enterTo="opacity-100 translate-y-0"
-                leave="transition ease-in duration-150"
-                leaveFrom="opacity-100 translate-y-0"
-                leaveTo="opacity-0 translate-y-1"
-            >
-                <Popover.Panel className="absolute left-1/2 z-10 mt-5 flex w-screen max-w-max -translate-x-1/2 px-4 z-99">
-                    <div className="w-screen max-w-lg flex-auto overflow-hidden rounded-3xl bg-white text-sm leading-6 shadow-lg ring-1 ring-gray-900/5">
-                        <div className="p-4">
-                            {Notifications.map((item) => (
-                                <div key={item.name} className="group relative flex gap-x-6 rounded-lg p-4 hover:bg-gray-50">
-                                    <div className="mt-1 flex h-11 w-11 flex-none items-center justify-center rounded-lg bg-gray-50 group-hover:bg-white">
-                                        <item.icon className="h-6 w-6 text-gray-600 group-hover:text-indigo-600" aria-hidden="true" />
-                                    </div>
-                                    <div>
-                                        <a href={item.href} className="font-semibold text-gray-900">
-                                            {item.name}
-                                            <span className="absolute inset-0" />
-                                        </a>
-                                        <p className="mt-1 text-gray-600">{item.description}</p>
-                                    </div>
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant='ghost' className='relative px-2' onClick={getNotifications}>
+                        <BellIcon className='h-6 w-6 text-gray-600 group-hover:text-neutral-800' aria-hidden='true' />
+                        <div className='absolute inline-flex items-center justify-center w-6 h-6  font-medium text-white bg-primary border-2 border-white rounded-full -top-1 -end-1  text-[9px]'>{notReadMessages.length || 0}</div>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className='w-[310px] '>
+                    <div className='flex justify-between gap-3 p-1 mt-1'>
+                        <p className='font-bold text-sm text-foreground'>Notifications</p>
+                        {!loading && notReadMessages.length > 0 && (
+                            <div className='text-xs text-muted-foreground select-none cursor-pointer' onClick={markAsRead}>
+                                Mark all as read
+                            </div>
+                        )}
+                    </div>
+
+                    {loading && (
+                        <div className='flex flex-col gap-2 px-2'>
+                            <Skeleton className='w-3/4 h-4 rounded-md bg-neutral-300' />
+                            <Skeleton className='w-1/2 h-4 rounded-md bg-neutral-300' />
+                        </div>
+                    )}
+
+                    {error && <p className='text-xs text-center my-3'>{error}</p>}
+
+                    {!loading && notificationsData && notificationsData.length === 0 && (
+                        <div className='flex flex-col gap-2'>
+                            <p className='text-xs text-center my-3'>No notifications yet</p>
+                        </div>
+                    )}
+
+                    {notificationsData && notificationsData.length > 0 && (
+                        <ScrollArea className='max-h-60 w-[300px] flex flex-col  rounded-lg p-1  border-1 select-none'>
+                            {notificationsData.map(item => (
+                                <div key={item.id} className=' rounded-md border w-full my-1 px-2 py-1 hover:bg-gray-50 '>
+                                    <p className='font-medium text-sm text-foreground '>
+                                        {item.branchResponses[0].make} {item.branchResponses[0].model} {item.branchResponses[0].year}
+                                        {item.viewed === false && <span className='  ml-2 -mt-1  bg-green-100 text-green-800 text-[10px] font-normalme-2 px-2.5 py-0.5 rounded dark:bg-green-900 dark:text-green-300'>New</span>}
+                                    </p>
+
+                                    <p className='font-normal text-xs text-muted-foreground '>{item.message}</p>
                                 </div>
                             ))}
-                        </div>
-                        <div className="grid grid-cols-2 divide-x divide-gray-900/5 bg-gray-50">
-                            {callsToAction.map((item) => (
-                                <a
-                                    key={item.name}
-                                    href={item.href}
-                                    className="flex items-center justify-center gap-x-2.5 p-3 font-semibold text-gray-900 hover:bg-gray-100"
-                                >
-                                    {item.name}
-                                </a>
-                            ))}
-                        </div>
-                    </div>
-                </Popover.Panel>
-            </Transition>
-        </Popover>
-    )
+                        </ScrollArea>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </>
+    );
 }
